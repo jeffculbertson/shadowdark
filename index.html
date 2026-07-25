@@ -12,24 +12,45 @@
             flex-direction: column;
             align-items: center;
         }
+        ol {
+            max-width: 420px;
+            text-wrap: pretty;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .load-character {
+            background-color: #d2d2d2;
+            padding: 10px 20px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
     <h1>Load or Paste Level 0 Character Data</h1>
-    <h4>Get your Randomized Level 0 character from <a href="https://shadowdarklings.net/create">ShadowDarklings</a>. </h4>
-    
-    <!-- New: File Load Input -->
-    <div>
-        <label for="fileLoad"><strong>Load from file:</strong></label>
-        <input type="file" id="fileLoad" accept=".json">
-    </div>
-    <br>
+    <h3 style="margin-block: 0;">How to use this site</h4>
+    <ol>
+        <li>Get your character from <a href="https://shadowdarklings.net/settings/sources=SD&ancestries=1,2,3,4,5,6&classes=1,2,3,4">ShadowDarklings</a>. This link has specific settings for allowed ancestries, so accept the settings.</li>
+        <li>Then click <b>Create</b> in the nav.</li>
+        <li>Scroll down to GENERATION METHOD, and select <b>Random 0</b>.</li>
+        <li>Under GENERATE RANDOM LEVEL 0 CHARACTERS, click <b>Random 0</b>.</li>
+        <li>Scroll all the way to the bottom of the page to the EXPORT section.</li>
+        <li>Make sure <i>Copy to Clipboard</i> is selected and click the <b>JSON</b> button.</li>
+        <li>Paste that data into the field below, and click <b>Render Character</b>.</li>
+    </ol>
+
 
     <textarea id="jsonInput" rows="10" cols="50" placeholder='Paste JSON here...'></textarea>
     <br>
     <button id="submitBtn">Render Character</button>
     <p id="errorMessage" style="color: red; display: none;">Invalid JSON. Please check your formatting.</p>
+    <br>
+    <!-- New: File Load Input -->
+    <div class="load-character">
+        <label for="fileLoad" style="font-size: 13px;"><strong>Load character:</strong></label>
+        <input type="file" id="fileLoad" accept=".json">
+    </div>
 
     <script>
         // 1. Handle File Loading
