@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Character Display</title>
+    <style>
+        /* Base global styles */
+        :root {
+            --border-heavy: 3px solid #111;
+            --border-light: 1px solid #111;
+            --bg-dark: #111;
+            --text-light: #fff;
+            --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: #e9e9e9;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .actions {
+            margin-bottom: 20px;
+            gap: 10px;
+            display: flex;
+        }
+
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Character Sheet Grid Layout */
+        .sheet-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 20px;
+            background: #fff;
+            padding: 20px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Generic Box Styles */
+        .box {
+            border: var(--border-heavy);
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box-header {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 5px 10px;
+            margin: -10px -10px 10px -10px;
+        }
+
+        .label {
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .value {
+            font-size: 1.2em;
+        }
+
+        /* Stats Grid (Left Column) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            border: var(--border-heavy);
+            display: flex;
+            flex-direction: column;
+            padding: 5px;
+        }
+
+        .stat-value-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 1.4em;
+            margin-top: 5px;
+        }
+        
+        .stat-score { font-weight: bold; }
+        .stat-mod { color: #555; }
+
+        /* HP & AC Row */
+        .combat-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .combat-box .value { font-size: 2em; font-weight: bold; margin-top: 10px; }
+
+        /* Input Field Styling */
+        .hp-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            outline: none;
+            font-family: var(--font-main);
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            background: transparent;
+            margin-top: 10px;
+        }
+        
+        .hp-input:focus {
+            background-color: #f0f0f0;
+            border-bottom: 2px solid #000;
+        }
+
+        /* NEW: Text Area Styling for Attacks and Talents */
+        .textarea-input {
+            width: 100%;
+            flex-grow: 1;
+            box-sizing: border-box;
+            border: none;
+            outline: none;
+            font-family: var(--font-main);
+            font-size: 0.9em;
+            line-height: 1.4;
+            background: transparent;
+            resize: vertical;
+            padding: 5px;
+            min-height: 120px;
+        }
+
+        .textarea-input:focus {
+            background-color: #f9f9f9;
+            border-bottom: 2px solid #000;
+        }
+
+        /* Gear List Inputs */
+        .gear-slot {
+            display: flex;
+            align-items: center;
+            border-bottom: var(--border-light);
+            margin-bottom: 5px;
+            padding-bottom: 2px;
+        }
+
+        .gear-num {
+            width: 25px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .gear-input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            font-family: var(--font-main);
+            font-size: 1em;
+            background: transparent;
+        }
+        
+        .gear-input:focus {
+            border-bottom: 2px solid #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="actions">
+        <button id="newCharBtn">Start a New Character</button>
+        <button id="saveCharBtn">Save Character</button>
+    </div>
+
+    <!-- The container where the layout will be injected -->
+    <div id="renderContainer"></div>
+
+    <script>
+        // Helper function to calculate modifiers
+        function getModifier(score) {
+            const mod = Math.floor((score - 10) / 2);
+            return mod >= 0 ? `+${mod}` : `${mod}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('renderContainer');
+            const savedData = sessionStorage.getItem('userJsonData');
+
+            if (!savedData) {
+                container.innerHTML = '<p>No data found. <a href="index.html">Go back</a>.</p>';
+                return;
+            }
+
+            window.charData = JSON.parse(savedData);
+            const char = window.charData;
+
+            // Prepare the gear list items
+            let currentGear = [];
+            if (char.gear) {
+                char.gear.forEach(item => {
+                    let itemName = item.name;
+                    
+                    // If it is a bundled pack (like 5 arrows that only take 1 slot)
+                    // we append the quantity so it displays as "Arrows (5)"
+                    if (item.totalUnits > item.slots) {
+                        itemName += ` (${item.totalUnits})`;
+                    }
+                    
+                    // Loop based on the number of slots the item takes up.
+                    // A 2-slot item will push its name into the array twice, taking up two lines.
+                    const slotsTaken = item.slots || 1;
+                    for (let s = 0; s < slotsTaken; s++) {
+                        currentGear.push(itemName);
+                    }
+                });
+            }
+
+            let gearHtml = '';
+            for (let i = 0; i < char.gearSlotsTotal; i++) {
+                const slotValue = currentGear[i] || ""; 
+                gearHtml += `
+                    <div class="gear-slot">
+                        <span class="gear-num">${i + 1}.</span>
+                        <input type="text" class="gear-input" value="${slotValue}" data-index="${i}">
+                    </div>
+                `;
+            }
+
+            const defaultTalents = char.talentsAndSpellsText !== undefined 
+                ? char.talentsAndSpellsText 
+                : `Languages: ${char.languages}\nSpells: ${char.spellsKnown}`;
+
+            // Build the HTML Structure
+            const htmlOutput = `
+                <div class="sheet-container">
+                    
+                    <!-- COLUMN 1: Stats & Combat -->
+                    <div class="col-left">
+                        <div class="stats-grid">
+                            <div class="stat-box"><div class="label">STR</div><div class="stat-value-row"><span class="stat-score">${char.stats.STR}</span> / <span class="stat-mod">${getModifier(char.stats.STR)}</span></div></div>
+                            <div class="stat-box"><div class="label">INT</div><div class="stat-value-row"><span class="stat-score">${char.stats.INT}</span> / <span class="stat-mod">${getModifier(char.stats.INT)}</span></div></div>
+                            <div class="stat-box"><div class="label">DEX</div><div class="stat-value-row"><span class="stat-score">${char.stats.DEX}</span> / <span class="stat-mod">${getModifier(char.stats.DEX)}</span></div></div>
+                            <div class="stat-box"><div class="label">WIS</div><div class="stat-value-row"><span class="stat-score">${char.stats.WIS}</span> / <span class="stat-mod">${getModifier(char.stats.WIS)}</span></div></div>
+                            <div class="stat-box"><div class="label">CON</div><div class="stat-value-row"><span class="stat-score">${char.stats.CON}</span> / <span class="stat-mod">${getModifier(char.stats.CON)}</span></div></div>
+                            <div class="stat-box"><div class="label">CHA</div><div class="stat-value-row"><span class="stat-score">${char.stats.CHA}</span> / <span class="stat-mod">${getModifier(char.stats.CHA)}</span></div></div>
+                        </div>
+
+                        <div class="combat-row">
+                            <div class="box combat-box">
+                                <div class="box-header">HP</div>
+                                <input type="number" id="hpInput" class="hp-input" value="${char.maxHitPoints}">
+                            </div>
+                            <div class="box combat-box">
+                                <div class="box-header">AC</div>
+                                <div class="value">${char.armorClass}</div>
+                            </div>
+                        </div>
+
+                        <div class="box">
+                            <div class="box-header">Attacks</div>
+                            <textarea id="attacksInput" class="textarea-input">${char.attacks.join('\n')}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- COLUMN 2: Bio Information -->
+                    <div class="col-middle">
+                        <div class="box"><div class="label">Name</div><div class="value">${char.name}</div></div>
+                        <div class="box"><div class="label">Ancestry</div><div class="value">${char.ancestry}</div></div>
+                        <div class="box"><div class="label">Class</div><div class="value">${char.class}</div></div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <div class="box" style="flex: 1;"><div class="label">Level</div><div class="value">${char.level}</div></div>
+                            <div class="box" style="flex: 1;"><div class="label">XP</div><div class="value">${char.XP}</div></div>
+                        </div>
+
+                        <div class="box"><div class="label">Title</div><div class="value">${char.title}</div></div>
+                        <div class="box"><div class="label">Alignment</div><div class="value">${char.alignment}</div></div>
+                        <div class="box"><div class="label">Background</div><div class="value">${char.background}</div></div>
+                        <div class="box"><div class="label">Deity</div><div class="value">${char.deity}</div></div>
+                    </div>
+
+                    <!-- COLUMN 3: Talents & Gear -->
+                    <div class="col-right">
+                        <div class="box" style="min-height: 200px;">
+                            <div class="box-header">Talents / Spells</div>
+                            <textarea id="talentsInput" class="textarea-input" style="min-height: 150px;">${defaultTalents}</textarea>
+                        </div>
+
+                        <div class="box">
+                            <div class="box-header">Gear</div>
+                            <div style="display: flex; gap: 15px; margin-bottom: 10px; font-weight: bold;">
+                                <span>GP: ${char.gold}</span>
+                                <span>SP: ${char.silver}</span>
+                                <span>CP: ${char.copper}</span>
+                            </div>
+                            <div class="gear-list">
+                                ${gearHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            container.innerHTML = htmlOutput;
+
+            // --- BUTTON ACTIONS ---
+
+            document.getElementById('newCharBtn').addEventListener('click', function() {
+                sessionStorage.removeItem('userJsonData');
+                window.location.href = 'index.html';
+            });
+
+            document.getElementById('saveCharBtn').addEventListener('click', function() {
+                
+                const currentHP = document.getElementById('hpInput').value;
+                window.charData.maxHitPoints = parseInt(currentHP, 10) || 0;
+
+                const attacksText = document.getElementById('attacksInput').value;
+                window.charData.attacks = attacksText.split('\n').map(item => item.trim()).filter(item => item !== '');
+
+                window.charData.talentsAndSpellsText = document.getElementById('talentsInput').value;
+
+                // Gear List Save Logic
+                const gearInputs = document.querySelectorAll('.gear-input');
+                window.charData.gear = []; 
+                let usedSlotsCount = 0;
+
+                gearInputs.forEach(input => {
+                    const val = input.value.trim();
+                    if (val !== '') {
+                        usedSlotsCount++;
+                        window.charData.gear.push({
+                            name: val,
+                            slots: 1, // Every filled line counts as 1 slot 
+                            quantity: 1 // Defaulting to 1 to prevent inflation of raw unbundled items
+                        });
+                    }
+                });
+
+                window.charData.gearSlotsUsed = usedSlotsCount;
+
+                // Download JSON
+                const updatedJsonString = JSON.stringify(window.charData, null, 2);
+                const blob = new Blob([updatedJsonString], { type: 'application/json' });
+                const downloadUrl = URL.createObjectURL(blob);
+                const tempLink = document.createElement('a');
+                tempLink.href = downloadUrl;
+                tempLink.download = `${window.charData.name.replace(/\s+/g, '_')}_character.json`; 
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+                URL.revokeObjectURL(downloadUrl);
+            });
+        });
+    </script>
+</body>
+</html>
