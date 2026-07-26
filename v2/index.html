@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ShadowDark Character Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --border-heavy: 2px solid #111;
+            --bg-dark: #111;
+            --text-light: #fff;
+            --font-main: Montserrat, sans-serif;
+        }
+        body {
+            font-family: var(--font-main);
+            background: radial-gradient(circle at 50% 0%, #958431, #3c3618 65%, #000000);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100dvh;
+        }
+        .controls {
+            margin-block: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .controls input {
+            font-size: 0;
+        }
+        button, input[type="file"]::file-selector-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-size: 14px;
+            font-weight: 500;
+            background: #000;
+            border: none;
+            color: #ffee69;
+            border-radius: 4px;
+        }
+        button:hover, input[type="file"]:hover::file-selector-button {
+            color: white;
+        }
+        .file-load-label {
+            font-weight: 600;
+            margin-inline: 4px;
+            font-size: 14px;
+            opacity: .65;
+        }
+        /* Sheet Layout */
+        .sheet-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            background: #ffffff;
+            padding: 20px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 40px 40px -10px rgba(0, 0, 0);
+        }
+        .col-left {
+            display: grid;
+            grid-template-rows: repeat(8, 1fr);
+            gap: 15px;
+        }
+        .col-middle {
+            display: grid;
+            gap: 15px;
+            grid-template-rows: 208.5px 85px 1fr 2fr;
+        }
+        .box {
+            border: var(--border-heavy);
+            padding: 10px;
+            gap: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .col-right .box {
+            display: flex;
+            height: -webkit-fill-available;
+        }
+        .box-header {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 5px 10px 7px;
+            margin: -10px -10px 6px -10px;
+            font-size: 14px;
+            line-height: 1;
+            letter-spacing: .05em;
+        }
+        .label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+        /* Inputs */
+        input[type="text"], input[type="number"] {
+            border: none;
+            outline: none;
+            font-size: 20px;
+            width: 100%;
+            font-family: inherit;
+            font-weight: 300;
+            padding: 0;
+        }
+        input:focus, textarea:focus {
+            background-color: #fff9d0;
+        }
+        input[disabled] {
+            background: repeating-linear-gradient(135deg, #ececec, #ececec 10px, #f4f4f4 10px, #f4f4f4 20px);
+        }
+        textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.3;
+            padding: 0;
+            height: -webkit-fill-available;
+        }
+        /* Grid Specifics */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+        .stat-box {
+            border: var(--border-heavy);
+            padding: 5px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .stat-inputs {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            font-size: 22px;
+            font-weight: 300;
+        }
+        .stat-inputs input {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            flex: 1;
+        }
+        .combat-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: center;
+            height: fit-content;
+        }
+        .combat-box input {
+            font-size: 2em;
+            text-align: center;
+            font-weight: bold;
+            border: none;
+        }
+        #gearList {
+            display: grid;
+            grid-template-rows: repeat(20, 1fr);
+            gap: 5px;
+            flex: 1;
+        }
+        .gear-row {
+            display: grid;
+            gap: 8px;
+            align-items: center;
+            grid-template-columns: 20px 1fr;
+        }
+        .gear-row input {
+            font-size: 16px;
+            height: -webkit-fill-available;
+        }
+        .gear-num {
+            color: #555;
+            font-size: 14px;
+        }
+        .coin-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .coin-container .label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .coin-container input {
+            font-size: 16px;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button id="btnGenerate">Generate Level 0 Character</button>
+        <button id="btnSave">Save Character</button>
+        <div>
+            <label for="fileLoad" class="file-load-label">Load:</label>
+            <input type="file" id="fileLoad" accept=".json">
+        </div>
+    </div>
+
+    <form id="characterSheet" class="sheet-container">
+        
+        <!-- COLUMN 1: Character Details (Previously Middle) -->
+        <div class="col-left">
+            <div class="box"><div class="label">Name</div><input type="text" id="charName"></div>
+            <div class="box"><div class="label">Ancestry</div><input type="text" id="ancestry"></div>
+            <div class="box"><div class="label">Class</div><input type="text" id="class"></div>
+            <div style="display: flex; gap: 15px;">
+                <div class="box" style="flex: 1;"><div class="label">Level</div><input type="number" id="level" value="0"></div>
+                <div class="box" style="flex: 1;"><div class="label">XP</div><input type="text" id="xp"></div>
+            </div>
+            <div class="box"><div class="label">Title</div><input type="text" id="title"></div>
+            <div class="box"><div class="label">Alignment</div><input type="text" id="alignment"></div>
+            <div class="box"><div class="label">Background</div><input type="text" id="background"></div>
+            <div class="box"><div class="label">Deity</div><input type="text" id="deity"></div>
+        </div>
+
+        <!-- COLUMN 2: Stats, Combat, Attacks, Talents (Previously Left + Talents moved here) -->
+        <div class="col-middle">
+            <div class="stats-grid">
+                <div class="stat-box"><div class="label">STR</div><div class="stat-inputs"><input type="number" id="strScore"> / <input type="text" id="strMod"></div></div>
+                <div class="stat-box"><div class="label">INT</div><div class="stat-inputs"><input type="number" id="intScore"> / <input type="text" id="intMod"></div></div>
+                <div class="stat-box"><div class="label">DEX</div><div class="stat-inputs"><input type="number" id="dexScore"> / <input type="text" id="dexMod"></div></div>
+                <div class="stat-box"><div class="label">WIS</div><div class="stat-inputs"><input type="number" id="wisScore"> / <input type="text" id="wisMod"></div></div>
+                <div class="stat-box"><div class="label">CON</div><div class="stat-inputs"><input type="number" id="conScore"> / <input type="text" id="conMod"></div></div>
+                <div class="stat-box"><div class="label">CHA</div><div class="stat-inputs"><input type="number" id="chaScore"> / <input type="text" id="chaMod"></div></div>
+            </div>
+            <div class="combat-row">
+                <div class="box combat-box"><div class="box-header">HP</div><input type="number" id="hp"></div>
+                <div class="box combat-box"><div class="box-header">AC</div><input type="number" id="ac"></div>
+            </div>
+            <div class="box">
+                <div class="box-header">Attacks</div>
+                <textarea id="attacks"></textarea>
+            </div>
+            <div class="box" style="flex-grow: 1;">
+                <div class="box-header">Talents / Spells</div>
+                <textarea id="talents"></textarea>
+            </div>
+        </div>
+
+        <!-- COLUMN 3: Gear Only -->
+        <div class="col-right">
+            <div class="box">
+                <div class="box-header">Gear</div>
+                <div class="coin-container">
+                    <div class="label">GP: <input type="number" id="gp"></div>
+                    <div class="label">SP: <input type="number" id="sp"></div>
+                    <div class="label">CP: <input type="number" id="cp"></div>
+                </div>
+                <div id="gearList">
+                    <!-- Gear slots injected via JS -->
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <script>
+        // Setup 20 gear slots
+        const gearListContainer = document.getElementById('gearList');
+        for (let i = 1; i <= 20; i++) {
+            gearListContainer.innerHTML += `
+                <div class="gear-row">
+                    <span class="gear-num">${i}.</span>
+                    <input type="text" id="gear${i}">
+                </div>
+            `;
+        }
+
+        // --- HELPER FUNCTIONS ---
+        function roll(d, count = 1) {
+            let total = 0;
+            for (let i = 0; i < count; i++) {
+                total += Math.floor(Math.random() * d) + 1;
+            }
+            return total;
+        }
+
+        function getModString(score) {
+            if (score <= 3) return "-4";
+            if (score <= 5) return "-3";
+            if (score <= 7) return "-2";
+            if (score <= 9) return "-1";
+            if (score <= 11) return "0";
+            if (score <= 13) return "+1";
+            if (score <= 15) return "+2";
+            if (score <= 17) return "+3";
+            return "+4";
+        }
+
+        function getModNumber(score) {
+            if (score <= 3) return -4;
+            if (score <= 5) return -3;
+            if (score <= 7) return -2;
+            if (score <= 9) return -1;
+            if (score <= 11) return 0;
+            if (score <= 13) return 1;
+            if (score <= 15) return 2;
+            if (score <= 17) return 3;
+            return 4;
+        }
+
+        // --- 1. GENERATE CHARACTER ---
+        document.getElementById('btnGenerate').addEventListener('click', () => {
+            
+            // 1. Roll Stats (3d6 in order, reroll if none >= 14)
+            let stats = {};
+            let validStats = false;
+            while (!validStats) {
+                stats = {
+                    str: roll(6, 3), int: roll(6, 3), dex: roll(6, 3),
+                    wis: roll(6, 3), con: roll(6, 3), cha: roll(6, 3)
+                };
+                if (Object.values(stats).some(val => val >= 14)) {
+                    validStats = true;
+                }
+            }
+
+            // Populate Stats and Modifiers
+            ['str', 'int', 'dex', 'wis', 'con', 'cha'].forEach(stat => {
+                document.getElementById(`${stat}Score`).value = stats[stat];
+                document.getElementById(`${stat}Mod`).value = getModString(stats[stat]);
+            });
+
+            // 2. Ancestry (1d12)
+            const ancestryRoll = roll(12);
+            let ancestry = "Human";
+            if (ancestryRoll <= 4) ancestry = "Human";
+            else if (ancestryRoll <= 6) ancestry = "Elf";
+            else if (ancestryRoll <= 8) ancestry = "Dwarf";
+            else if (ancestryRoll <= 10) ancestry = "Halfling";
+            else if (ancestryRoll === 11) ancestry = "Half-Orc";
+            else ancestry = "Goblin";
+            document.getElementById('ancestry').value = ancestry;
+
+            // 3. Name (1d20 based on Ancestry)
+            const names = {
+                "Dwarf": ["Hilde", "Torbin", "Marga", "Bruno", "Karina", "Naugrim", "Brenna", "Darvin", "Elga", "Alric", "Isolde", "Gendry", "Bruga", "Junnor", "Vidrid", "Torson", "Brielle", "Ulfgar", "Sarna", "Grimm"],
+                "Elf": ["Eliara", "Ryarn", "Sariel", "Tirolas", "Galira", "Varos", "Daeniel", "Axidor", "Hiralia", "Cyrwin", "Lothiel", "Zaphiel", "Nayra", "Ithior", "Amriel", "Elyon", "Jirwyn", "Natinel", "Fiora", "Ruhiel"],
+                "Goblin": ["Iggs", "Tark", "Nix", "Lenk", "Roke", "Fitz", "Tila", "Riggs", "Prim", "Zeb", "Finn", "Borg", "Yark", "Deeg", "Nibs", "Brak", "Fink", "Rizzo", "Squib", "Grix"],
+                "Halfling": ["Willow", "Benny", "Annie", "Tucker", "Marie", "Hobb", "Cora", "Gordie", "Rose", "Ardo", "Alma", "Norbert", "Jennie", "Barvin", "Tilly", "Pike", "Lydia", "Marlow", "Astrid", "Jasper"],
+                "Half-Orc": ["Vara", "Gralk", "Ranna", "Korv", "Zasha", "Hrogar", "Klara", "Tragan", "Brolga", "Drago", "Yelena", "Krull", "Ulara", "Tulk", "Shiraal", "Wulf", "Ivara", "Hirok", "Aja", "Zoraan"],
+                "Human": ["Zali", "Bram", "Clara", "Nattias", "Rina", "Denton", "Mirena", "Aran", "Morgan", "Giralt", "Tamra", "Oscar", "Ishana", "Rogar", "Jasmin", "Tarin", "Yuri", "Malchor", "Lienna", "Godfrey"]
+            };
+            const nameRoll = roll(20) - 1; 
+            document.getElementById('charName').value = names[ancestry][nameRoll];
+
+            // 4. Background (1d20)
+            const backgrounds = [
+                "Urchin: You grew up in the merciless streets of a large city.",
+                "Wanted: There's a price on your head, but you have allies.",
+                "Cult Initiate: You know blasphemous secrets and rituals.",
+                "Thieves' Guild: You have connections, contacts, and debts.",
+                "Banished: Your people cast you out for supposed crimes.",
+                "Orphaned: An unusual guardian rescued and raised you.",
+                "Wizard's Apprentice: You have a knack and eye for magic.",
+                "Jeweler: You can easily appraise value and authenticity.",
+                "Herbalist: You know plants, medicines, and poisons.",
+                "Barbarian: You left the horde, but it never quite left you.",
+                "Mercenary: You fought friend and foe alike for your coin.",
+                "Sailor: Pirate, privateer, or merchant — the seas are yours.",
+                "Acolyte: You're well trained in religious rites and doctrines.",
+                "Soldier: You served as a fighter in an organized army.",
+                "Ranger: The woods and wilds are your true home.",
+                "Scout: You survived on stealth, observation, and speed.",
+                "Minstrel: You've traveled far with your charm and talent.",
+                "Scholar: You know much about ancient history and lore.",
+                "Noble: A famous name has opened many doors for you.",
+                "Chirurgeon: You know anatomy, surgery, and first aid."
+            ];
+            const bgRoll = roll(20) - 1;
+            const fullBackgroundString = backgrounds[bgRoll];
+            document.getElementById('background').value = fullBackgroundString.split(':')[0];
+            
+            // 5. Ancestry Talents, Languages, and Setup
+            let talents = [];
+            let hpBonus = 0;
+            
+            // Level 0 Talent & Background string (no "Background:" prefix)
+            talents.push("Beginner's Luck: You can wield all gear until 1st level.");
+            talents.push(fullBackgroundString + "."); 
+
+            if (ancestry === "Dwarf") {
+                talents.push("Stout: Start with +2 HP. Roll hit points per level with advantage.");
+                talents.push("Languages: Common, Dwarven.");
+                hpBonus = 2;
+            } 
+            else if (ancestry === "Elf") {
+                if (roll(2) === 1) {
+                    talents.push("Farsight: You get a +1 bonus to attack rolls with ranged weapons.");
+                } else {
+                    talents.push("Farsight: You get a +1 bonus to spellcasting checks.");
+                }
+                talents.push("Languages: Common, Elvish, Sylvan.");
+            } 
+            else if (ancestry === "Goblin") {
+                talents.push("Keen Senses: You can't be surprised.");
+                talents.push("Languages: Common, Goblin.");
+            } 
+            else if (ancestry === "Half-Orc") {
+                talents.push("Mighty: You have a +1 bonus to attack and damage rolls with melee weapons.");
+                talents.push("Languages: Common, Orcish.");
+            } 
+            else if (ancestry === "Halfling") {
+                talents.push("Stealthy: Once per day, you can become invisible for 3 rounds.");
+                talents.push("Languages: Common.");
+            } 
+            else if (ancestry === "Human") {
+                talents.push("Ambitious: You gain one additional talent roll at 1st level.");
+                const langRoll = roll(10);
+                const commonLanguages = {
+                    1: "Common", 2: "Dwarvish", 3: "Elvish", 4: "Giant",
+                    5: "Goblin", 6: "Merran", 7: "Orcish", 8: "Reptilian",
+                    9: "Sylvan", 10: "Thanian"
+                };
+                const extraLang = commonLanguages[langRoll];
+                if (extraLang !== "Common") {
+                    talents.push(`Languages: Common, ${extraLang}.`);
+                } else {
+                    talents.push("Languages: Common.");
+                }
+            }
+
+            // Set Talents Box (Join array with a line break)
+            document.getElementById('talents').value = talents.join("\n");
+
+            // 6. Hit Points & Armor Class
+            const conMod = getModNumber(stats.con);
+            const dexMod = getModNumber(stats.dex);
+            
+            document.getElementById('hp').value = Math.max(1, conMod) + hpBonus; 
+            document.getElementById('ac').value = 10 + dexMod;
+
+            // 7. Alignment (1d6)
+            const alignmentRoll = roll(6);
+            let alignment = "Lawful";
+            if (alignmentRoll <= 3) alignment = "Lawful";
+            else if (alignmentRoll <= 5) alignment = "Neutral";
+            else alignment = "Chaotic";
+            document.getElementById('alignment').value = alignment;
+
+            // 8. Deity (1d8)
+            const deities = {
+                1: "Saint Terragnis", 2: "Saint Terragnis",
+                3: "Gede", 4: "Madeera the Covenant",
+                5: "Ord", 6: "Memnon",
+                7: "Shune the Vile", 8: "Ramlaat"
+            };
+            document.getElementById('deity').value = deities[roll(8)];
+
+            // 9. Basic Class Details & XP
+            document.getElementById('class').value = "";
+            document.getElementById('level').value = 0;
+            document.getElementById('xp').value = 0;
+
+            // 10. Gear & Attacks
+            const gearTable = {
+                1: "Torch", 2: "Dagger", 3: "Pole",
+                4: "Shortbow and 5 arrows", 5: "Rope, 60'", 6: "Oil, flask",
+                7: "Crowbar", 8: "Iron spikes (10)", 9: "Flint and steel",
+                10: "Grappling hook", 11: "Club", 12: "Caltrops (one bag)"
+            };
+            
+            // Calculate total accessible slots
+            const maxGearSlots = Math.max(10, stats.str);
+            
+            // Reset all 20 fields and apply disable logic
+            for (let i = 1; i <= 20; i++) {
+                const gearInput = document.getElementById(`gear${i}`);
+                const gearNumberSpan = gearInput.previousElementSibling; 
+                
+                gearInput.value = "";
+                
+                if (i > maxGearSlots) {
+                    gearInput.disabled = true;
+                    gearNumberSpan.style.color = "#ccc"; // Light grey for disabled slots
+                } else {
+                    gearInput.disabled = false;
+                    gearNumberSpan.style.color = "#555"; // Normal color for active slots
+                }
+            }
+
+            // Roll items
+            const numItems = roll(4);
+            let weaponAttacks = new Set(); // Using a Set automatically handles duplicates
+
+            for (let i = 1; i <= numItems; i++) {
+                const itemRolled = gearTable[roll(12)];
+                document.getElementById(`gear${i}`).value = itemRolled;
+                
+                // Check for weapons to add to the Attacks box
+                if (itemRolled === "Dagger") weaponAttacks.add("DAGGER: 1d4");
+                if (itemRolled === "Shortbow and 5 arrows") weaponAttacks.add("SHORTBOW: 1d4");
+                if (itemRolled === "Club") weaponAttacks.add("CLUB: 1d4");
+            }
+
+            // Output deduplicated attacks, separated by line breaks
+            document.getElementById('attacks').value = Array.from(weaponAttacks).join("\n");
+        });
+
+        // --- 3. LOAD CHARACTER ---
+        document.getElementById('fileLoad').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Populate basic info
+                    document.getElementById('charName').value = data.name || "";
+                    document.getElementById('ancestry').value = data.ancestry || "";
+                    document.getElementById('class').value = data.class || "";
+                    document.getElementById('level').value = data.level || 0;
+                    document.getElementById('xp').value = data.xp || "";
+                    document.getElementById('title').value = data.title || "";
+                    document.getElementById('alignment').value = data.alignment || "";
+                    document.getElementById('background').value = data.background || "";
+                    document.getElementById('deity').value = data.deity || "";
+                    
+                    // Populate Stats
+                    if(data.stats) {
+                        ['str', 'int', 'dex', 'wis', 'con', 'cha'].forEach(stat => {
+                            const upper = stat.toUpperCase();
+                            if(data.stats[upper]) {
+                                document.getElementById(`${stat}Score`).value = data.stats[upper].score || "";
+                                document.getElementById(`${stat}Mod`).value = data.stats[upper].mod || "";
+                            }
+                        });
+                    }
+
+                    // Populate Combat
+                    if(data.combat) {
+                        document.getElementById('hp').value = data.combat.hp || "";
+                        document.getElementById('ac').value = data.combat.ac || "";
+                        document.getElementById('attacks').value = data.combat.attacks || "";
+                    }
+
+                    document.getElementById('talents').value = data.talents || "";
+
+                    // Populate Wealth
+                    if(data.wealth) {
+                        document.getElementById('gp').value = data.wealth.gp || "";
+                        document.getElementById('sp').value = data.wealth.sp || "";
+                        document.getElementById('cp').value = data.wealth.cp || "";
+                    }
+
+                    // Populate Gear
+                    if(data.gear) {
+                        for (let i = 1; i <= 20; i++) {
+                            document.getElementById(`gear${i}`).value = data.gear[i-1] || "";
+                        }
+                    }
+                    
+                    // Reset the file input so the same file can be loaded again if needed
+                    event.target.value = ""; 
+
+                } catch (err) {
+                    alert("Error loading file. Please ensure it is a valid JSON character file.");
+                }
+            };
+            reader.readAsText(file);
+        });
+    </script>
+</body>
+</html>
